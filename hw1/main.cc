@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <errno.h>
 
 
 using namespace std;
@@ -16,7 +17,7 @@ int main(int argc, char *argv[]) {
 
 	if(pid < 0) {
 	
-		perror("Fork failed");
+		perror("PID failed \n");
 
 		exit(EXIT_FAILURE);
 	}
@@ -25,7 +26,9 @@ int main(int argc, char *argv[]) {
 
 		execl("./counter","counter", "5", (char*)NULL);
 		
-		exit(EXIT_SUCCESS);		
+		perror("execl \n");
+
+		exit(errno);		
 		
 	} 
 	else {
@@ -41,15 +44,12 @@ int main(int argc, char *argv[]) {
 			printf("exited with status: %d\n", WEXITSTATUS(status));
 			exit(EXIT_SUCCESS);
 		}
-		else if(w == -1) {
+		if(w == -1) {
 			perror("Failer at wait \n");
 
-			exit(EXIT_FAILURE);
+			exit(errno);
 		}
-		else {
-			perror("Failed \n");
-			exit(EXIT_FAILURE);
-		}
+
 	}
 
 }
