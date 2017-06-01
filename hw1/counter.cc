@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
 	for(int i = 0; i < number; i++) {
 		long pid = getpid();
 	
-		cout << "Process : " << pid << " " << i + 1 << '\n';
+		cout << "Process: " << pid << " " << i + 1 << '\n';
 		
 	}
 	

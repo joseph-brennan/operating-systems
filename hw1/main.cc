@@ -38,6 +38,7 @@ int main(int argc, char *argv[]) {
 
 		int w = waitpid(pid, &status, 0);
 
+
 		if(WIFEXITED(status)) {
 			printf("Process %ld ", (long)getpid());
 
