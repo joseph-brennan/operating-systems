@@ -51,11 +51,12 @@ int main(int argc, char *argv[])
 	}
 	else if(CPid == 0) { 
 		//chiild
-		kill(PPid, SIGHUP);
 		kill(PPid, SIGABRT);
 		kill(PPid, SIGSEGV);
 		kill(PPid, SIGSEGV);
 		kill(PPid, SIGSEGV);
+		kill(PPid, SIGHUP);
+
 /*
 		kill(SIGHUP, PPid);
 		kill(SIGABRT, PPid);
