@@ -53,20 +53,9 @@ int main(int argc, char *argv[])
 		//chiild
 		kill(PPid, SIGHUP);
 		kill(PPid, SIGABRT);
-		//cout << "hi there im working" << endl;
 		kill(PPid, SIGSEGV);
 		kill(PPid, SIGSEGV);
 		kill(PPid, SIGSEGV);
-
-/*
-		kill(SIGHUP, PPid);
-		kill(SIGABRT, PPid);
-		kill(SIGSEGV, PPid);
-		kill(SIGSEGV, PPid);
-		kill(SIGSEGV, PPid);
-*/
-
-
 
 	} else { 
 		//parent
