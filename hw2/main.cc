@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 	action->sa_handler = sig_handler;
 	
 	if(sigaction(SIGHUP, action, NULL) < 0) {
-		perror("Error with sigaction");
+		perror("Error with sighup");
 
 		delete action;
 
@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 	}
 
 	if(sigaction(SIGABRT, action, NULL) < 0) {
-		perror("Error with sigaction");
+		perror("Error with sigabrt");
 
 		delete action;
 
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 	}
 
 	if(sigaction(SIGSEGV, action, NULL) < 0) {
-		perror("Error with sigaction");
+		perror("Error with sigsegv");
 
 		delete action;
 
@@ -51,11 +51,12 @@ int main(int argc, char *argv[])
 	}
 	else if(CPid == 0) { 
 		//chiild
-		kill(PPid, SIGABRT);
-		kill(PPid, SIGSEGV);
-		kill(PPid, SIGSEGV);
-		kill(PPid, SIGSEGV);
 		kill(PPid, SIGHUP);
+		kill(PPid, SIGABRT);
+		//cout << "hi there im working" << endl;
+		kill(PPid, SIGSEGV);
+		kill(PPid, SIGSEGV);
+		kill(PPid, SIGSEGV);
 
 /*
 		kill(SIGHUP, PPid);
@@ -74,6 +75,9 @@ int main(int argc, char *argv[])
 		do {
 			int w = waitpid(CPid, &status, 0);
 		} while (!WIFEXITED(status));
+
+		delete action;
+		exit(EXIT_SUCCESS);
 	}
 
 }
