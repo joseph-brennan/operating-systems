@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <sys/wait.h>
 #include <errno.h>
+#include <assert.h>
 using namespace std;
 
 void sig_handler(int);
@@ -14,9 +15,16 @@ int main(int argc, char *argv[])
 {
 	struct sigaction *action = new (struct sigaction);
 	sigemptyset (&(action->sa_mask));
+
 	action->sa_handler = sig_handler;
-	
-	if(sigaction(SIGHUP, action, NULL) < 0) {
+
+	assert (sigaction (SIGHUP, action, NULL) == 0);
+
+	assert (sigaction (SIGABRT, action, NULL) == 0);
+
+	assert (sigaction (SIGSEGV, action, NULL) == 0);
+
+/**	if(sigaction(SIGHUP, action, NULL) < 0) {
 		perror("Error with sighup");
 
 		delete action;
@@ -39,18 +47,24 @@ int main(int argc, char *argv[])
 
 		exit(EXIT_FAILURE);
 	}
+*/
 
 
-	int PPid = getpid();
 
 	pid_t CPid = fork();
 
 	if (CPid == -1) {
+		perror("fork()");
 
+		delete action;
+
+		exit(EXIT_FAILURE);
 		//error
 	}
 	else if(CPid == 0) { 
 		//chiild
+		int PPid = getppid();
+
 		kill(PPid, SIGHUP);
 		kill(PPid, SIGABRT);
 		kill(PPid, SIGSEGV);
@@ -63,6 +77,17 @@ int main(int argc, char *argv[])
 		int status;
 		do {
 			int w = waitpid(CPid, &status, 0);
+
+			if(w == -1) {
+				if(errno == EINTR) {
+					continue;
+				}
+				perror("waitpid failed");
+
+				cout << "waitpid() Failed" << errno << endl;
+
+				break;
+			}
 		} while (!WIFEXITED(status));
 
 		delete action;
