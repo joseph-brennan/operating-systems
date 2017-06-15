@@ -66,16 +66,42 @@ int main(int argc, char *argv[])
 		int PPid = getppid();
 
 		kill(PPid, SIGHUP);
+		//cout << "hi 1" << endl;
 		kill(PPid, SIGABRT);
+		//cout << "hi 2" << endl;
 		kill(PPid, SIGSEGV);
+		//cout << "hi 3" << endl;
 		kill(PPid, SIGSEGV);
+		//cout << "hi 4" << endl;
 		kill(PPid, SIGSEGV);
+		//cout << "hi 5" << endl;
 
 	} else { 
 		//parent
+/*		while(1) {
+			int status;
 
+			int retpid = waitpid(CPid, &status, 0);
+
+			if (retpid == -1) {
+				if (errno == EINTR) {
+					continue;
+				}
+
+				perror("waitpid failed");
+
+				break;
+			}
+
+			assert(retpid == CPid);
+		}
+
+*/
 		int status;
+
 		do {
+
+
 			int w = waitpid(CPid, &status, 0);
 
 			if(w == -1) {
@@ -84,10 +110,14 @@ int main(int argc, char *argv[])
 				}
 				perror("waitpid failed");
 
-				cout << "waitpid() Failed" << errno << endl;
+				//cout << "waitpid() Failed" << errno << endl;
 
 				break;
 			}
+
+			//assert(w == CPid);
+
+
 		} while (!WIFEXITED(status));
 
 		delete action;
