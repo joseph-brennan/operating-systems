@@ -326,51 +326,52 @@ void create_idle ()
     idle->switches = 0;
     idle->started = sys_time;
 }
-/*
-void create_process ()
-{
-    int process_pid;
-    
-    if ((process_pid = fork ()) == 0)
-    {
-        dprintt ("idle", getpid ());
 
-        // the pause might be interrupted, so we need to
-        // repeat it forever.
-        for (;;)
+//copying from creat_idle above
+void create_process (char *program)
+{
+    int processPid;
+    
+    if ((processPid = fork ()) >= 0)
+    {
+        perror("fork");
+    }
+    
+    if (processPid == 0) 
+    {
+        dprintt(program, getpid());
+        
+        execl(program, program, NULL);
+        
+        perror("execl failed");
+    } else {
+    
+        if(kill(processPid, SIGSTOP) != 1)
         {
-            dmess ("going to sleep");
-            pause ();
-            if (errno == EINTR)
-            {
-                dmess ("waking up");
-                continue;
-            }
-            perror ("pause");
+            perror("kill");
         }
     }
-    idle = new (PCB);
-    idle->state = RUNNING;
-    idle->name = "IDLE";
-    idle->pid = idlepid;
-    idle->ppid = 0;
-    idle->interrupts = 0;
-    idle->switches = 0;
-    idle->started = sys_time;
-
+    
+    PCB *proc = new (PCB);
+    proc->state = RUNNING;
+    proc->name = "Program";
+    proc->pid = processPid;
+    proc->ppid = 0;
+    proc->interrupts = 0;
+    proc->switches = 0;
+    proc->started = sys_time;
+    
+    new_list.push_back(proc);
 }
-*/
+
 int main (int argc, char **argv)
 {
-    /* coming back to after create process
-    list<char**> new_list;
-    
-    for (int i = 0; i < argc; i++)
+    // coming back to after create process
+    for (int i = 1; i <= argc; i++)
     {
-        new_list.push_back(argv);
+        create_process(argv[i]);
         
     }
-    */
     
     int pid = getpid();
     dprintt ("main", pid);
