@@ -72,7 +72,7 @@ Add the following functionality.
     c) Start the idle process to use the rest of the time slice.
 */
 
-#define NUM_SECONDS 3
+#define NUM_SECONDS 20
 
 // make sure the asserts work
 #undef NDEBUG
@@ -212,7 +212,32 @@ struct sigaction *create_handler (int signum, void (*handler)(int))
 
 PCB* choose_process ()
 {
-    return idle;
+    running -> interrupts++;
+
+    running -> state = READY;
+    
+    if(!new_list.empty()) 
+    {
+        running -> switches++;
+        
+        PCB *pcb = new_list.front();
+        
+        new_list.push_back(pcb);
+        
+        processes.push_back(running);
+        
+        int pid = fork();
+        
+        if(pid == 0) {
+            execl(pcb->name, pcb->name, NULL);
+        }
+    
+    } else {
+    
+        running = idle;
+    }
+    
+    return running;
 }
 
 void scheduler (int signum)
@@ -332,29 +357,9 @@ void create_process (char *program)
 {
     int processPid;
     
-    if ((processPid = fork ()) >= 0)
-    {
-        perror("fork");
-    }
-    
-    if (processPid == 0) 
-    {
-        dprintt(program, getpid());
-        
-        execl(program, program, NULL);
-        
-        perror("execl failed");
-    } else {
-    
-        if(kill(processPid, SIGSTOP) != 1)
-        {
-            perror("kill");
-        }
-    }
-    
     PCB *proc = new (PCB);
-    proc->state = RUNNING;
-    proc->name = "Program";
+    proc->state = NEW;
+    proc->name = program;
     proc->pid = processPid;
     proc->ppid = 0;
     proc->interrupts = 0;
@@ -367,10 +372,13 @@ void create_process (char *program)
 int main (int argc, char **argv)
 {
     // coming back to after create process
-    for (int i = 1; i <= argc; i++)
+    if(argc > 0) 
     {
-        create_process(argv[i]);
-        
+        for (int i = 1; i < argc; i++)
+        {
+            create_process(argv[i]);
+            
+        }
     }
     
     int pid = getpid();
