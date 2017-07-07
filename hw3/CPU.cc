@@ -72,7 +72,7 @@ Add the following functionality.
     c) Start the idle process to use the rest of the time slice.
 */
 
-#define NUM_SECONDS 20
+#define NUM_SECONDS 3
 
 // make sure the asserts work
 #undef NDEBUG
@@ -326,9 +326,52 @@ void create_idle ()
     idle->switches = 0;
     idle->started = sys_time;
 }
+/*
+void create_process ()
+{
+    int process_pid;
+    
+    if ((process_pid = fork ()) == 0)
+    {
+        dprintt ("idle", getpid ());
 
+        // the pause might be interrupted, so we need to
+        // repeat it forever.
+        for (;;)
+        {
+            dmess ("going to sleep");
+            pause ();
+            if (errno == EINTR)
+            {
+                dmess ("waking up");
+                continue;
+            }
+            perror ("pause");
+        }
+    }
+    idle = new (PCB);
+    idle->state = RUNNING;
+    idle->name = "IDLE";
+    idle->pid = idlepid;
+    idle->ppid = 0;
+    idle->interrupts = 0;
+    idle->switches = 0;
+    idle->started = sys_time;
+
+}
+*/
 int main (int argc, char **argv)
 {
+    /* coming back to after create process
+    list<char**> new_list;
+    
+    for (int i = 0; i < argc; i++)
+    {
+        new_list.push_back(argv);
+        
+    }
+    */
+    
     int pid = getpid();
     dprintt ("main", pid);
 
