@@ -224,12 +224,17 @@ PCB* choose_process ()
         
         new_list.push_back(pcb);
         
-        processes.push_back(running);
-        
         int pid = fork();
         
         if(pid == 0) {
             execl(pcb->name, pcb->name, NULL);
+        }
+        
+        if(pid < 0) {
+            perror("pid");
+            
+        } else {
+            
         }
     
     } else {
