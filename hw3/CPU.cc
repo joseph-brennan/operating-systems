@@ -9,6 +9,8 @@
 #include <sys/wait.h>
 
 /*
+colaberated with the cs room on friday
+
 This program does the following.
 1) Create handlers for two signals.
 2) Create an idle process which will be executed when there is nothing
@@ -212,34 +214,71 @@ struct sigaction *create_handler (int signum, void (*handler)(int))
 
 PCB* choose_process ()
 {
-    running -> interrupts++;
-
-    running -> state = READY;
+    running->state = READY;
+    
+    running->interrupts++;
     
     if(!new_list.empty()) 
     {
-        running -> switches++;
-        
+        //cout << "new list pull" << endl;
         PCB *pcb = new_list.front();
         
-        new_list.push_back(pcb);
-        
-        int pid = fork();
+        pid_t pid = fork();
         
         if(pid == 0) {
+            //cout << "im execl" << endl;
             execl(pcb->name, pcb->name, NULL);
         }
         
-        if(pid < 0) {
-            perror("pid");
+        else if(pid < 0) {
+            perror("pid fork fail");
             
         } else {
+            pcb->state = RUNNING;
             
+            pcb->pid = pid;
+            
+            pcb->ppid = getpid();
+            
+            running->switches++;
+            
+            pcb->started = sys_time;
+            
+            processes.push_back(pcb);
+            
+            new_list.pop_front();
+            
+            running = processes.back();
+            
+            //return running;
         }
     
     } else {
     
-        running = idle;
+        list<PCB *> :: iterator it = processes.begin();
+        
+        for(; it != processes.end(); it++) 
+        {
+            if((*it)->state == READY) 
+            {
+                if((*it)->pid != running->pid) 
+                {
+                    running->switches++;
+                }
+                
+                processes.erase(it);
+                
+                processes.push_back(*it);
+                
+                running = *it;
+                
+                running->state = RUNNING;
+            }
+            
+            else
+                running = idle;
+        }
+        //return running;
     }
     
     return running;
@@ -265,10 +304,20 @@ void process_done (int signum)
     assert (signum == SIGCHLD);
 
     int status, cpid;
+    
+    int time_start = running->started;
+    
+    int run_time = sys_time - time_start;
 
     cpid = waitpid (-1, &status, WNOHANG);
 
     dprintt ("in process_done", cpid);
+    cout << "interrupted: " << running->interrupts << endl;
+    cout << "context switched: " << running->switches << endl;
+    cout << "process time: " << run_time << endl;
+    
+    running->state = TERMINATED;
+    
 
     if  (cpid == -1)
     {
@@ -358,24 +407,31 @@ void create_idle ()
 }
 
 //copying from creat_idle above
-void create_process (char *program)
+void create_process (char* program)
 {
     int processPid;
     
-    PCB *proc = new (PCB);
+    PCB* proc = new (PCB);
     proc->state = NEW;
     proc->name = program;
-    proc->pid = processPid;
-    proc->ppid = 0;
     proc->interrupts = 0;
     proc->switches = 0;
     proc->started = sys_time;
     
-    new_list.push_back(proc);
+    new_list.push_front(proc);
+    //cout << "hi" << endl;
 }
 
 int main (int argc, char **argv)
 {
+    
+    int pid = getpid();
+    dprintt ("main", pid);
+
+    sys_time = 0;
+
+    boot (pid);
+    
     // coming back to after create process
     if(argc > 0) 
     {
@@ -385,13 +441,6 @@ int main (int argc, char **argv)
             
         }
     }
-    
-    int pid = getpid();
-    dprintt ("main", pid);
-
-    sys_time = 0;
-
-    boot (pid);
 
     // create a process to soak up cycles
     create_idle ();
