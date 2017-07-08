@@ -413,9 +413,7 @@ void create_idle ()
 
 //copying from creat_idle above
 void create_process (char* program)
-{
-    int processPid;
-    
+{    
     PCB* proc = new (PCB);
     proc->state = NEW;
     proc->name = program;

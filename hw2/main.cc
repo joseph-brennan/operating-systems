@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 
-			//assert(w == CPid);
+			assert(w == CPid);
 
 
 		} while (!WIFEXITED(status));
