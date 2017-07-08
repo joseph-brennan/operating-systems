@@ -312,11 +312,16 @@ void process_done (int signum)
     cpid = waitpid (-1, &status, WNOHANG);
 
     dprintt ("in process_done", cpid);
+    
     cout << "interrupted: " << running->interrupts << endl;
+    
     cout << "context switched: " << running->switches << endl;
+    
     cout << "process time: " << run_time << endl;
     
     running->state = TERMINATED;
+    
+    running = idle;
     
 
     if  (cpid == -1)
