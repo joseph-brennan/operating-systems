@@ -18,21 +18,25 @@
 
 int i;
 
+pthread_mutex_t mutex;
+
 void *foo (void *bar)
 {
     pthread_t *me = new pthread_t (pthread_self());
+    pthread_mutex_lock(&mutex);
     printf("in a foo thread, ID %ld\n", *me);
 
     for (i = 0; i < *((int *) bar); i++)
     {
         int tmp = i;
-
+        
         if (tmp != i)
         {
             printf ("aargh: %d != %d\n", tmp, i);
         }
     }
 
+    pthread_mutex_unlock(&mutex);
     pthread_exit (me);
 }
 
