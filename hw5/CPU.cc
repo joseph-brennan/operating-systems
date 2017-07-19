@@ -339,6 +339,36 @@ void process_done (int signum)
     }
 }
 
+//*****************copied out of main.cc for hw5*********************************
+void process_trap (int signum)
+{
+    assert (signum == SIGTRAP);
+    WRITE("---- entering process_trap\n");
+
+    /*
+    ** poll all the pipes as we don't know which process sent the trap, nor
+    ** if more than one has arrived.
+    */
+    for (int i = 0; i < NUM_PIPES; i+=2)
+    {
+        char buf[1024];
+        int num_read = read (pipes[P2K][READ_END], buf, 1023);
+        if (num_read > 0)
+        {
+            buf[num_read] = '\0';
+            WRITE("kernel read: ");
+            WRITE(buf);
+            WRITE("\n");
+
+            // respond
+            const char *message = "from the kernel to the process";
+            write (pipes[K2P][WRITE_END], message, strlen (message));
+        }
+    }
+    WRITE("---- leaving process_trap\n");
+}
+//*******************************************************************************
+
 /*
 ** stop the running process and index into the ISV to call the ISR
 */
@@ -361,6 +391,8 @@ void boot (int pid)
 {
     ISV[SIGALRM] = scheduler;       create_handler (SIGALRM, ISR);
     ISV[SIGCHLD] = process_done;    create_handler (SIGCHLD, ISR);
+//*****************************Code added****************************************
+    ISV[SIGTRAP] = process_trap;    creat_handler  (SIGTRAP, ISR);
 
     // start up clock interrupt
     int ret;
