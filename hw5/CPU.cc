@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
 
 /*
 colaberated with the cs room on friday
@@ -95,6 +98,21 @@ Add the following functionality.
 #   define dprint(a)
 #endif /* EBUG */
 
+//***************************ADDED***************************************
+#define READ_END 0
+#define WRITE_END 1
+
+#define NUM_CHILDREN 5
+#define NUM_PIPES NUM_CHILDREN*2
+
+#define P2K i
+#define K2P i+1
+
+#define WRITE(a) { const char *foo = a; write (1, foo, strlen (foo)); }
+
+int pipes[NUM_PIPES][2];
+int child_count = 0;
+//************************************************************************
 using namespace std;
 
 enum STATE { NEW, RUNNING, WAITING, READY, TERMINATED };
@@ -392,7 +410,7 @@ void boot (int pid)
     ISV[SIGALRM] = scheduler;       create_handler (SIGALRM, ISR);
     ISV[SIGCHLD] = process_done;    create_handler (SIGCHLD, ISR);
 //*****************************Code added****************************************
-    ISV[SIGTRAP] = process_trap;    creat_handler  (SIGTRAP, ISR);
+    ISV[SIGTRAP] = process_trap;    create_handler  (SIGTRAP, ISR);
 
     // start up clock interrupt
     int ret;
