@@ -112,6 +112,7 @@ Add the following functionality.
 
 int child_count = 0;
 //************************************************************************
+
 using namespace std;
 
 enum STATE { NEW, RUNNING, WAITING, READY, TERMINATED };
@@ -157,7 +158,6 @@ ostream& operator << (ostream &os, struct PCB *pcb)
     os << "interrupts:   " << pcb->interrupts << endl;
     os << "switches:     " << pcb->switches << endl;
     os << "started:      " << pcb->started << endl;
-//*******************************************************
     return (os);
 }
 
@@ -232,41 +232,6 @@ struct sigaction *create_handler (int signum, void (*handler)(int))
     return (action);
 }
 
-//************************************************************************
-int eye2eh (int i, char *buf, int bufsize, int base)
-{
-    if (bufsize < 1) return (-1);
-    buf[bufsize-1] = '\0';
-    if (bufsize == 1) return (0);
-    if (base < 2 || base > 16)
-    {
-        for (int j = bufsize-2; j >= 0; j--)
-        {
-            buf[j] = ' ';
-        }
-        return (-1);
-    }
-
-    int count = 0;
-    const char *digits = "0123456789ABCDEF";
-    for (int j = bufsize-2; j >= 0; j--)
-    {
-        if (i == 0)
-        {
-            buf[j] = ' ';
-        }
-        else
-        {
-            buf[j] = digits[i%base];
-            i = i/base;
-            count++;
-        }
-    }
-    if (i != 0) return (-1);
-    return (count);
-}
-//************************************************************************
-
 PCB* choose_process ()
 {
     running->state = READY;
@@ -275,16 +240,15 @@ PCB* choose_process ()
     
     if(!new_list.empty()) 
     {
-        //**
-        for (int i = 0; i < NUM_PIPES; i+=2)
-        {
-            //cout << "new list pull" << endl;
-            PCB *pcb = new_list.front();
-
-            pid_t pid = fork();
-            
-            if(pid == 0) {
-    //*******************************************************************
+        //cout << "new list pull" << endl;
+        PCB *pcb = new_list.front();
+        
+        pid_t pid = fork();
+        
+        if(pid == 0) {
+            for(int i = 0; i < NUM_PIPES; i+=2)
+            {
+     //*******************************************************************
                 close (pcb->pipes[P2K][READ_END]);
                 
                 close (pcb->pipes[K2P][WRITE_END]);
@@ -295,34 +259,34 @@ PCB* choose_process ()
                 
                 dup2 (pcb->pipes[K2P][READ_END], 4);
     //*******************************************************************
-                cout << "im execl" << endl;
-                cout << "name: "<< pcb->name << endl;
+                //cout << "im execl" << endl;
                 execl(pcb->name, pcb->name, NULL);
             }
+        }
+        
+        else if(pid < 0) {
+            perror("pid fork fail");
             
-            else if(pid < 0) {
-                perror("pid fork fail");
-                
-            } else {
-                pcb->state = RUNNING;
-                
-                pcb->pid = pid;
-                
-                pcb->ppid = getpid();
-                
-                running->switches++;
-                
-                pcb->started = sys_time;
-                
-                processes.push_back(pcb);
-                
-                new_list.pop_front();
-                
-                running = processes.back();
-                
-                //return running;
-            }
-        }//***
+        } else {
+            pcb->state = RUNNING;
+            
+            pcb->pid = pid;
+            
+            pcb->ppid = getpid();
+            
+            running->switches++;
+            
+            pcb->started = sys_time;
+            
+            processes.push_back(pcb);
+            
+            new_list.pop_front();
+            
+            running = processes.back();
+            
+            //return running;
+        }
+    
     } else {
     
         list<PCB *> :: iterator it = processes.begin();
@@ -372,77 +336,53 @@ void scheduler (int signum)
 void process_done (int signum)
 {
     assert (signum == SIGCHLD);
+
+    int status, cpid;
     
-    WRITE("------ test child is now in process_done\n");
+    int time_start = running->started;
     
-    for (;;)
-    {//**
+    int run_time = sys_time - time_start;
 
-        int status, cpid;
-        
-        int time_start = running->started;
-        
-        int run_time = sys_time - time_start;
+    cpid = waitpid (-1, &status, WNOHANG);
 
-        cpid = waitpid (-1, &status, WNOHANG);
+    dprintt ("in process_done", cpid);
+    
+    cout << "interrupted: " << running->interrupts << endl;
+    
+    cout << "context switched: " << running->switches << endl;
+    
+    cout << "process time: " << run_time << endl;
+    
+    running->state = TERMINATED;
+    
+    running = idle;
+    
 
-        dprintt ("in process_done", cpid);
-        
-        cout << "interrupted: " << running->interrupts << endl;
-        
-        cout << "context switched: " << running->switches << endl;
-        
-        cout << "process time: " << run_time << endl;
-        
-        running->state = TERMINATED;
-        
-        running = idle;
-        
-
-        if  (cpid < 0)
-        {
-            WRITE("cpid < 0\n");
-
-            kill (0, SIGTERM);
-            //perror ("waitpid");
-        }
-        else if (cpid == 0)
-        {
-            WRITE("cpid == 0\n");
-            break;
-            //if (errno == EINTR) { return; }
-            //perror ("no children");
-        }
-        else
-        {
-            char buf[10];
-            assert (eye2eh (cpid, buf, 10, 10) != -1);
-            WRITE("process exited:");
-            WRITE(buf);
-            WRITE("\n");
-            child_count++;
-            if (child_count == NUM_CHILDREN)
-            {
-                kill (0, SIGTERM);
-            }
-            //dprint (WEXITSTATUS (status));
-        }
-    }//**
+    if  (cpid == -1)
+    {
+        perror ("waitpid");
+    }
+    else if (cpid == 0)
+    {
+        if (errno == EINTR) { return; }
+        perror ("no children");
+    }
+    else
+    {
+        dprint (WEXITSTATUS (status));
+    }
 }
 
 //*****************copied out of main.cc for hw5*********************************
 void process_trap (int signum)
 {
-    cout << "trapp works" << endl;
-/*
-    cout << "I'm trapped" << endl;
     assert (signum == SIGTRAP);
     WRITE("---- entering process_trap\n");
 
     /*
     ** poll all the pipes as we don't know which process sent the trap, nor
     ** if more than one has arrived.
-    
+    */
     for (int i = 0; i < NUM_PIPES; i+=2)
     {
         char buf[1024];
@@ -460,7 +400,6 @@ void process_trap (int signum)
         }
     }
     WRITE("---- leaving process_trap\n");
-*/
 }
 //*******************************************************************************
 
@@ -487,7 +426,7 @@ void boot (int pid)
     ISV[SIGALRM] = scheduler;       create_handler (SIGALRM, ISR);
     ISV[SIGCHLD] = process_done;    create_handler (SIGCHLD, ISR);
 //*****************************Code added****************************************
-    ISV[SIGUSR1] = process_trap;    create_handler (SIGUSR1, ISR);
+    ISV[SIGTRAP] = process_trap;    create_handler (SIGTRAP, ISR);
 
     // start up clock interrupt
     int ret;
@@ -540,41 +479,33 @@ void create_idle ()
 
 //copying from creat_idle above
 void create_process (char* program)
-{
-    cout << "starting creat process" << endl;
+{    
     PCB* proc = new (PCB);
-    
     proc->state = NEW;
-    
     proc->name = program;
-    
     proc->interrupts = 0;
-    
     proc->switches = 0;
-    
     proc->started = sys_time;
-//************************************************************************
+    
     // create the pipes
     for (int i = 0; i < NUM_PIPES; i+=2)
     {
-        // i is from process to kernel, K2P from kernel to process
         int r1 = pipe2(proc->pipes[P2K], O_NONBLOCK);
         int r2 = pipe2(proc->pipes[K2P], O_NONBLOCK);
         assert(r1 == 0 && r1 ==0);
-        //assert (pipe (proc->pipes[P2K]) == 0);
-        
-       // assert (pipe (proc->pipes[K2P]) == 0);
+    /*
+        // i is from process to kernel, K2P from kernel to process
+        assert (pipe (proc->pipes[P2K]) == 0);
+        assert (pipe (proc->pipes[K2P]) == 0);
 
         // make the read end of the kernel pipe non-blocking.
-        
-        //assert (fcntl (proc->pipes[P2K][READ_END], F_SETFL,
-        
-        //    fcntl(proc->pipes[P2K][READ_END], F_GETFL) | O_NONBLOCK) == 0);
+        assert (fcntl (proc->pipes[P2K][READ_END], F_SETFL,
+            fcntl(proc->pipes[P2K][READ_END], F_GETFL) | O_NONBLOCK) == 0);
+     */
     }
-//************************************************************************
-
+    
     new_list.push_front(proc);
-    cout << "create_process end" << endl;
+    //cout << "hi" << endl;
 }
 
 int main (int argc, char **argv)
