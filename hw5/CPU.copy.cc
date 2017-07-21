@@ -272,7 +272,7 @@ PCB* choose_process ()
     running->state = READY;
     
     running->interrupts++;
-    
+
     if(!new_list.empty()) 
     {
         //cout << "new list pull" << endl;
@@ -283,7 +283,7 @@ PCB* choose_process ()
         if(pid == 0) {
             for(int i = 0; i < NUM_PIPES; i+=2)
             {
-     //*******************************************************************
+
                 close (pcb->pipes[P2K][READ_END]);
                 
                 close (pcb->pipes[K2P][WRITE_END]);
@@ -293,13 +293,14 @@ PCB* choose_process ()
                 dup2 (pcb->pipes[P2K][WRITE_END], 3);
                 
                 dup2 (pcb->pipes[K2P][READ_END], 4);
-    //*******************************************************************
+
                 //cout << "im execl" << endl;
                 execl(pcb->name, pcb->name, NULL);
             }
         }
         
-        else if(pid < 0) {
+        else if(pid < 0)
+        {
             perror("pid fork fail");
             
         } else {
@@ -321,7 +322,7 @@ PCB* choose_process ()
             
             //return running;
         }
-    
+        
     } else {
     
         list<PCB *> :: iterator it = processes.begin();
@@ -423,11 +424,10 @@ void process_done (int signum)
                 kill (0, SIGTERM);
             }
         }
+        running->state = TERMINATED;
+
+        running = idle;
     }
-    
-    running->state = TERMINATED;
-    
-    running = idle;
     
     WRITE("---- leaving child_done\n");
 
@@ -622,10 +622,10 @@ int main (int argc, char **argv)
     {
         for (int i = 1; i < argc; i++)
         {
-            for (int j = 0; j < NUM_PIPES; j++)
-            {
+            //for (int j = 0; j < NUM_PIPES; j++)
+            //{
                 create_process(argv[i]);
-            }
+            //}
             
         }
     }
