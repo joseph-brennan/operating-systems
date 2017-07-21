@@ -109,6 +109,8 @@ Add the following functionality.
 #define K2P i+1
 
 #define WRITE(a) { const char *foo = a; write (1, foo, strlen (foo)); }
+
+int child_count = 0;
 //************************************************************************
 using namespace std;
 
