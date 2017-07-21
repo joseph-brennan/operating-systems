@@ -183,6 +183,41 @@ list<PCB *> processes;
 
 int sys_time;
 
+//********************************************************************
+int eye2eh (int i, char *buf, int bufsize, int base)
+{
+    if (bufsize < 1) return (-1);
+    buf[bufsize-1] = '\0';
+    if (bufsize == 1) return (0);
+    if (base < 2 || base > 16)
+    {
+        for (int j = bufsize-2; j >= 0; j--)
+        {
+            buf[j] = ' ';
+        }
+        return (-1);
+    }
+
+    int count = 0;
+    const char *digits = "0123456789ABCDEF";
+    for (int j = bufsize-2; j >= 0; j--)
+    {
+        if (i == 0)
+        {
+            buf[j] = ' ';
+        }
+        else
+        {
+            buf[j] = digits[i%base];
+            i = i/base;
+            count++;
+        }
+    }
+    if (i != 0) return (-1);
+    return (count);
+}
+//********************************************************************
+
 /*
 **  send signal to process pid every interval for number of times.
 */
@@ -336,7 +371,67 @@ void scheduler (int signum)
 void process_done (int signum)
 {
     assert (signum == SIGCHLD);
+    
+    WRITE("---- entering child_done\n");
 
+    for (;;)
+    {
+        int status, cpid;
+        
+        int time_start = running->started;
+    
+        int run_time = sys_time - time_start;
+    
+        cpid = waitpid (-1, &status, WNOHANG);
+        
+        dprintt ("in process_done", cpid);
+    
+        cout << "interrupted: " << running->interrupts << endl;
+        
+        cout << "context switched: " << running->switches << endl;
+        
+        cout << "process time: " << run_time << endl;
+
+        if (cpid < 0)
+        {
+            WRITE("cpid < 0\n");
+            kill (0, SIGTERM);
+        }
+        else if (cpid == 0)
+        {
+            WRITE("cpid == 0\n");
+            break;
+        }
+        else
+        {
+            dprint (WEXITSTATUS (status));
+            
+            char buf[10];
+            
+            assert (eye2eh (cpid, buf, 10, 10) != -1);
+            
+            WRITE("process exited:");
+            
+            WRITE(buf);
+            
+            WRITE("\n");
+            
+            child_count++;
+            
+            if (child_count == NUM_CHILDREN)
+            {
+                kill (0, SIGTERM);
+            }
+        }
+    }
+    
+    running->state = TERMINATED;
+    
+    running = idle;
+    
+    WRITE("---- leaving child_done\n");
+
+    /*
     int status, cpid;
     
     int time_start = running->started;
@@ -371,6 +466,7 @@ void process_done (int signum)
     {
         dprint (WEXITSTATUS (status));
     }
+    */
 }
 
 //*****************copied out of main.cc for hw5*********************************
@@ -383,6 +479,7 @@ void process_trap (int signum)
     ** poll all the pipes as we don't know which process sent the trap, nor
     ** if more than one has arrived.
     */
+    
     for (int i = 0; i < NUM_PIPES; i+=2)
     {
         char buf[1024];
@@ -490,10 +587,12 @@ void create_process (char* program)
     // create the pipes
     for (int i = 0; i < NUM_PIPES; i+=2)
     {
+    /*
         int r1 = pipe2(proc->pipes[P2K], O_NONBLOCK);
         int r2 = pipe2(proc->pipes[K2P], O_NONBLOCK);
         assert(r1 == 0 && r1 ==0);
-    /*
+    */
+    
         // i is from process to kernel, K2P from kernel to process
         assert (pipe (proc->pipes[P2K]) == 0);
         assert (pipe (proc->pipes[K2P]) == 0);
@@ -501,7 +600,7 @@ void create_process (char* program)
         // make the read end of the kernel pipe non-blocking.
         assert (fcntl (proc->pipes[P2K][READ_END], F_SETFL,
             fcntl(proc->pipes[P2K][READ_END], F_GETFL) | O_NONBLOCK) == 0);
-     */
+     
     }
     
     new_list.push_front(proc);
@@ -517,13 +616,16 @@ int main (int argc, char **argv)
     sys_time = 0;
 
     boot (pid);
-    
+
     // coming back to after create process
     if(argc > 0) 
     {
         for (int i = 1; i < argc; i++)
         {
-            create_process(argv[i]);
+            for (int j = 0; j < NUM_PIPES; j++)
+            {
+                create_process(argv[i]);
+            }
             
         }
     }
