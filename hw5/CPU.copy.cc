@@ -493,6 +493,9 @@ void process_trap (int signum)
 
             // respond
             const char *message = "from the kernel to the process";
+           
+          
+            //cout << message << " test " << endl;
             write (running->pipes[K2P][WRITE_END], message, strlen (message));
         }
     }
