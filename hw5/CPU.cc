@@ -478,11 +478,11 @@ void process_done (int signum)
 }
 
 
-const char** handle_pipe (char buffer)
+const char *handle_pipe (char buffer)
 {
-    string test = "Request process list";
+    char test[1024] = "Request process list";
     
-    if (buffer = test) {
+    if (buffer == test) {
         const char *message = to_string(sys_time).c_str();
         
         return message;
@@ -521,8 +521,8 @@ void process_trap (int signum)
             const char *test = to_string(sys_time).c_str();
             
             cout << test << " HI I worked " << endl;
-           
             */
+            
             //cout << message << " test " << endl;
             write (running->pipes[K2P][WRITE_END], message, strlen (message));
             
