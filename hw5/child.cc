@@ -28,7 +28,7 @@ int main (int argc, char** argv)
 
     printf ("writing in pid %d\n", pid);
     
-    const char *message = "from the process to the kernel";
+    const char *message = "Request process list";
     
     write (TO_KERNEL, message, strlen (message));
 

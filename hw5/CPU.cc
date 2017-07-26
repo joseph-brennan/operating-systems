@@ -14,6 +14,8 @@
 /*
 colaberated with the cs room on friday
 
+g++ -std=c++11  CPU.cc
+
 This program does the following.
 1) Create handlers for two signals.
 2) Create an idle process which will be executed when there is nothing
@@ -475,6 +477,19 @@ void process_done (int signum)
     */
 }
 
+
+const char** handle_pipe (char buffer)
+{
+    string test = "Request process list";
+    
+    if (buffer = test) {
+        const char *message = to_string(sys_time).c_str();
+        
+        return message;
+               
+    }
+}
+
 //*****************copied out of main.cc for hw5*********************************
 void process_trap (int signum)
 {
@@ -496,16 +511,22 @@ void process_trap (int signum)
             WRITE("kernel read: ");
             WRITE(buf);
             WRITE("\n");
-
+            
+            const char *message = handle_pipe(buf);
+            
+            /*
             // respond
             const char *message = "from the kernel to the process";
-            char new_buf[10];
-            int test = eye2eh (sys_time - running->started, new_buf,10, 10);
-            cout << new_buf << " testing !!!!!!! " << test << endl;
+            
+            const char *test = to_string(sys_time).c_str();
+            
+            cout << test << " HI I worked " << endl;
            
-          
+            */
             //cout << message << " test " << endl;
             write (running->pipes[K2P][WRITE_END], message, strlen (message));
+            
+            
         }
     }
     WRITE("---- leaving process_trap\n");
