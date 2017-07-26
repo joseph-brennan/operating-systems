@@ -477,16 +477,29 @@ void process_done (int signum)
     */
 }
 
+char pipe_responce [20];
 
-const char *handle_pipe (char buffer)
+const char *handle_pipe (char* buffer)
 {
-    char test[1024] = "Request process list";
+    const char test1[1024] = "Request process time";
     
-    if (buffer == test) {
-        const char *message = to_string(sys_time).c_str();
+    const char test2[1024] = "Request process list";
+
+    
+    if (buffer == test1) {
+        //const char *message = to_string(sys_time).c_str();
         
-        return message;
+        eye2eh (sys_time, pipe_responce, 20, 10);
+        
+        cout << pipe_responce << endl;
+        
+        return pipe_responce;
                
+    } else if (buffer == test2) {
+    
+    
+    } else {
+        perror("help i died");
     }
 }
 

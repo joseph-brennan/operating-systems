@@ -28,7 +28,7 @@ int main (int argc, char** argv)
 
     printf ("writing in pid %d\n", pid);
     
-    const char *message = "Request process list";
+    const char *message = "Request process time";
     
     write (TO_KERNEL, message, strlen (message));
 
