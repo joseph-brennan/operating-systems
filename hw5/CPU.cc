@@ -432,10 +432,11 @@ void process_done (int signum)
                 kill (0, SIGTERM);
             }
         }
-        running->state = TERMINATED;
-
-        running = idle;
     }
+    
+    running->state = TERMINATED;
+
+    running = idle;
     
     WRITE("---- leaving child_done\n");
 
@@ -477,7 +478,7 @@ void process_done (int signum)
     */
 }
 
-char pipe_responce [20];
+char pipe_responce [2];
 
 const char *handle_pipe (char* buffer)
 {
@@ -486,21 +487,26 @@ const char *handle_pipe (char* buffer)
     const char test2[1024] = "Request process list";
 
     
-    if (buffer == test1) {
+    if (buffer = "Request process time") {
         //const char *message = to_string(sys_time).c_str();
+ 
+        eye2eh (sys_time, pipe_responce, 2, 10);
         
-        eye2eh (sys_time, pipe_responce, 20, 10);
+        //strcpy (pipe_responce, "The System time is ");
         
-        cout << pipe_responce << endl;
-        
-        return pipe_responce;
+        //cout << pipe_responce << endl;
                
-    } else if (buffer == test2) {
-    
+    } else if (buffer =  "Request process list") {
+        
+        pipe_responce == running->name;
     
     } else {
+        
         perror("help i died");
+        exit(-1);
     }
+    
+    return pipe_responce;
 }
 
 //*****************copied out of main.cc for hw5*********************************
@@ -518,6 +524,7 @@ void process_trap (int signum)
     {
         char buf[1024];
         int num_read = read (running->pipes[P2K][READ_END], buf, 1023);
+        //cout << running->pipes[P2K][READ_END] << endl;
         if (num_read > 0)
         {
             buf[num_read] = '\0';
@@ -530,14 +537,10 @@ void process_trap (int signum)
             /*
             // respond
             const char *message = "from the kernel to the process";
-            
-            const char *test = to_string(sys_time).c_str();
-            
-            cout << test << " HI I worked " << endl;
             */
             
-            //cout << message << " test " << endl;
             write (running->pipes[K2P][WRITE_END], message, strlen (message));
+            
             
             
         }

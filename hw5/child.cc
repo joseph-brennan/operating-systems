@@ -30,7 +30,11 @@ int main (int argc, char** argv)
     
     const char *message = "Request process time";
     
+    //const char *message1 = "Request process list";
+    
     write (TO_KERNEL, message, strlen (message));
+    
+    //write (TO_KERNEL, message1, strlen (message));
 
     printf ("trapping to %d in pid %d\n", ppid, pid);
     
@@ -42,17 +46,19 @@ int main (int argc, char** argv)
     
     char buf[1024];
     
-    //cout << "test 0 pre-read" << endl;
+    char buf1[1024];
     
     int num_read = read (FROM_KERNEL, buf, 1023);
     
-    //std::cout << "test 1 read worked?" << endl;
+    //int sec_read = read (FROM_KERNEL, buf1, 1023);
     
     buf[num_read] = '\0';
     
-    //cout << "test 2 buffer line idk" << endl;
+    //buf[sec_read] = '\0';
     
     printf ("process %d read: %s\n", pid, buf);
+    
+    //printf ("process %d read: %s\n", pid, buf1);
     
 
     exit (0);
