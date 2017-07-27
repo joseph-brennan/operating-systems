@@ -28,13 +28,19 @@ int main (int argc, char** argv)
 
     printf ("writing in pid %d\n", pid);
     
-    const char *message = "Request process time";
+    char pipe_out[1024];
+    
+    strcpy(pipe_out, "Request process time.");
+    
+    strcat(pipe_out, "Request process list.");
+    
+    //const char *message = "Request process time";
     
     //const char *message1 = "Request process list";
     
-    write (TO_KERNEL, message, strlen (message));
+    const char *message = pipe_out;
     
-    //write (TO_KERNEL, message1, strlen (message));
+    write (TO_KERNEL, message, strlen (message));
 
     printf ("trapping to %d in pid %d\n", ppid, pid);
     
@@ -46,7 +52,7 @@ int main (int argc, char** argv)
     
     char buf[1024];
     
-    char buf1[1024];
+    //char buf1[1024];
     
     int num_read = read (FROM_KERNEL, buf, 1023);
     

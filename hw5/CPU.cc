@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
+#include <vector>
+#include <sstream>
 
 /*
 colaberated with the cs room on friday
@@ -105,10 +107,10 @@ Add the following functionality.
 #define WRITE_END 1
 
 #define NUM_CHILDREN 5
-#define NUM_PIPES NUM_CHILDREN*2
+#define NUM_PIPES 2
 
-#define P2K i
-#define K2P i+1
+#define P2K 0
+#define K2P 1
 
 #define WRITE(a) { const char *foo = a; write (1, foo, strlen (foo)); }
 
@@ -289,22 +291,19 @@ PCB* choose_process ()
         pid_t pid = fork();
         
         if(pid == 0) {
-            for(int i = 0; i < NUM_PIPES; i+=2)
-            {
 
-                close (pcb->pipes[P2K][READ_END]);
-                
-                close (pcb->pipes[K2P][WRITE_END]);
+            close (pcb->pipes[P2K][READ_END]);
+            
+            close (pcb->pipes[K2P][WRITE_END]);
 
-                // assign fildes 3 and 4 to the pipe ends in the child
-                
-                dup2 (pcb->pipes[P2K][WRITE_END], 3);
-                
-                dup2 (pcb->pipes[K2P][READ_END], 4);
+            // assign fildes 3 and 4 to the pipe ends in the child
+            
+            dup2 (pcb->pipes[P2K][WRITE_END], 3);
+            
+            dup2 (pcb->pipes[K2P][READ_END], 4);
 
-                //cout << "im execl" << endl;
-                execl(pcb->name, pcb->name, NULL);
-            }
+            //cout << "im execl" << endl;
+            execl(pcb->name, pcb->name, NULL);
         }
         
         else if(pid < 0)
@@ -478,27 +477,48 @@ void process_done (int signum)
     */
 }
 
-char pipe_responce [2];
+char pipe_responce [1024];
+char responce [2];
 
 const char *handle_pipe (char* buffer)
 {
-    const char test1[1024] = "Request process time";
+    string buf = buffer;
     
-    const char test2[1024] = "Request process list";
-
+    istringstream iss(buf);
     
-    if (buffer = "Request process time") {
+    vector<string> tokens;
+    
+    string token;
+    
+    while (getline(iss, token, '.')) {
+        if (!token.empty()) {
+            tokens.push_back(token);
+        }
+    }
+    
+    if (tokens[0] == "Request process time") {
         //const char *message = to_string(sys_time).c_str();
- 
-        eye2eh (sys_time, pipe_responce, 2, 10);
+        strcpy (pipe_responce, "The system time is ");
         
-        //strcpy (pipe_responce, "The System time is ");
+        eye2eh (sys_time, responce, 2, 10);
+        
+        strcat(pipe_responce, responce);
         
         //cout << pipe_responce << endl;
                
-    } else if (buffer =  "Request process list") {
+    }
+    if (tokens[1] ==  "Request process list") {
         
-        pipe_responce == running->name;
+        strcat(pipe_responce, " The process list is ");
+        
+        list<PCB *> :: iterator it;
+        
+        for(it = processes.begin(); it != processes.end(); it++) 
+        {
+            strcat(pipe_responce, (*it)->name);
+            
+            strcat(pipe_responce, " ");
+        }  
     
     } else {
         
@@ -519,32 +539,27 @@ void process_trap (int signum)
     ** poll all the pipes as we don't know which process sent the trap, nor
     ** if more than one has arrived.
     */
-    
-    for (int i = 0; i < NUM_PIPES; i+=2)
+    char buf[1024];
+    int num_read = read (running->pipes[P2K][READ_END], buf, 1023);
+    //cout << running->pipes[P2K][READ_END] << endl;
+    if (num_read > 0)
     {
-        char buf[1024];
-        int num_read = read (running->pipes[P2K][READ_END], buf, 1023);
-        //cout << running->pipes[P2K][READ_END] << endl;
-        if (num_read > 0)
-        {
-            buf[num_read] = '\0';
-            WRITE("kernel read: ");
-            WRITE(buf);
-            WRITE("\n");
-            
-            const char *message = handle_pipe(buf);
-            
-            /*
-            // respond
-            const char *message = "from the kernel to the process";
-            */
-            
-            write (running->pipes[K2P][WRITE_END], message, strlen (message));
-            
-            
-            
-        }
+        buf[num_read] = '\0';
+        WRITE("kernel read: ");
+        WRITE(buf);
+        WRITE("\n");
+        
+        const char *message = handle_pipe(buf);
+        
+        /*
+        // respond
+        const char *message = "from the kernel to the process";
+        */
+        
+        write (running->pipes[K2P][WRITE_END], message, strlen (message));
+
     }
+
     WRITE("---- leaving process_trap\n");
 }
 //*******************************************************************************
@@ -634,23 +649,19 @@ void create_process (char* program)
     proc->started = sys_time;
     
     // create the pipes
-    for (int i = 0; i < NUM_PIPES; i+=2)
-    {
     /*
         int r1 = pipe2(proc->pipes[P2K], O_NONBLOCK);
         int r2 = pipe2(proc->pipes[K2P], O_NONBLOCK);
         assert(r1 == 0 && r1 ==0);
     */
     
-        // i is from process to kernel, K2P from kernel to process
-        assert (pipe (proc->pipes[P2K]) == 0);
-        assert (pipe (proc->pipes[K2P]) == 0);
+    // i is from process to kernel, K2P from kernel to process
+    assert (pipe (proc->pipes[P2K]) == 0);
+    assert (pipe (proc->pipes[K2P]) == 0);
 
-        // make the read end of the kernel pipe non-blocking.
-        assert (fcntl (proc->pipes[P2K][READ_END], F_SETFL,
-            fcntl(proc->pipes[P2K][READ_END], F_GETFL) | O_NONBLOCK) == 0);
-     
-    }
+    // make the read end of the kernel pipe non-blocking.
+    assert (fcntl (proc->pipes[P2K][READ_END], F_SETFL,
+    fcntl(proc->pipes[P2K][READ_END], F_GETFL) | O_NONBLOCK) == 0);
     
     new_list.push_front(proc);
     //cout << "hi" << endl;
